@@ -1,0 +1,361 @@
+import java.util.*;
+
+// Student Class
+class Student {
+    String id;
+    String name;
+    int requiredCapacity;
+
+    Student(String id, String name, int requiredCapacity) {
+        this.id = id;
+        this.name = name;
+        this.requiredCapacity = requiredCapacity;
+    }
+}
+
+// Room Class
+class Room {
+    String id;
+    int capacity;
+    boolean occupied;
+
+    Room(String id, int capacity) {
+        this.id = id;
+        this.capacity = capacity;
+        this.occupied = false;
+    }
+
+    void occupyRoom() {
+        occupied = true;
+    }
+}
+
+// Request Class
+class Request {
+    Student student;
+    int priority;
+    int sequence;
+
+    Request(Student student, int priority, int sequence) {
+        this.student = student;
+        this.priority = priority;
+        this.sequence = sequence;
+    }
+}
+
+// Allocation Class
+class Allocation {
+    String studentId;
+    String studentName;
+    String roomId;
+
+    Allocation(String studentId, String studentName, String roomId) {
+        this.studentId = studentId;
+        this.studentName = studentName;
+        this.roomId = roomId;
+    }
+
+    void display() {
+        System.out.println("Student ID: " + studentId);
+        System.out.println("Student Name: " + studentName);
+        System.out.println("Room ID: " + roomId);
+        System.out.println("--------------------------");
+    }
+}
+
+// Main Hostel Room Allocation System
+class HostelRoomAllocationSystem {
+
+    HashMap<String, Student> students = new HashMap<>();
+    HashMap<String, Room> rooms = new HashMap<>();
+
+    PriorityQueue<Request> requests = new PriorityQueue<>(
+        (r1, r2) -> {
+            if (r1.priority != r2.priority) {
+                return Integer.compare(r2.priority, r1.priority);
+            }
+            return Integer.compare(r1.sequence, r2.sequence);
+        }
+    );
+
+    LinkedList<Allocation> allocations = new LinkedList<>();
+
+    int sequence = 0;
+
+    // Add Room
+    void addRoom(String id, int capacity) {
+
+        if (rooms.containsKey(id)) {
+            System.out.println("Room already exists!");
+            return;
+        }
+
+        if (capacity <= 0) {
+            System.out.println("Capacity must be positive!");
+            return;
+        }
+
+        rooms.put(id, new Room(id, capacity));
+
+        System.out.println("Room added successfully!");
+    }
+
+    // Register Student
+    void registerStudent(String id, String name, int capacity) {
+
+        if (students.containsKey(id)) {
+            System.out.println("Student already exists!");
+            return;
+        }
+
+        students.put(id, new Student(id, name, capacity));
+
+        System.out.println("Student registered successfully!");
+    }
+
+    // Submit Room Request
+    void submitRequest(String studentId, int priority) {
+
+        Student student = students.get(studentId);
+
+        if (student == null) {
+            System.out.println("Student not found!");
+            return;
+        }
+
+        requests.add(new Request(student, priority, sequence++));
+
+        System.out.println("Room request submitted successfully!");
+    }
+
+    // Allocate Room using Greedy Algorithm
+    void allocateRoom() {
+
+        if (requests.isEmpty()) {
+            System.out.println("No pending requests!");
+            return;
+        }
+
+        Request request = requests.poll();
+        Student student = request.student;
+
+        Room bestRoom = null;
+
+        for (Room room : rooms.values()) {
+
+            if (!room.occupied &&
+                room.capacity >= student.requiredCapacity) {
+
+                if (bestRoom == null ||
+                    room.capacity < bestRoom.capacity) {
+
+                    bestRoom = room;
+                }
+            }
+        }
+
+        if (bestRoom == null) {
+            System.out.println("No suitable room available for "
+                               + student.name);
+            return;
+        }
+
+        bestRoom.occupyRoom();
+
+        Allocation allocation = new Allocation(
+            student.id,
+            student.name,
+            bestRoom.id
+        );
+
+        allocations.add(allocation);
+
+        System.out.println("Room allocated successfully!");
+        System.out.println("Student: " + student.name);
+        System.out.println("Room: " + bestRoom.id);
+    }
+
+    // Display All Rooms
+    void displayRooms() {
+
+        System.out.println("\n----- Room Details -----");
+
+        if (rooms.isEmpty()) {
+            System.out.println("No rooms available.");
+            return;
+        }
+
+        for (Room room : rooms.values()) {
+
+            System.out.println("Room ID: " + room.id);
+            System.out.println("Capacity: " + room.capacity);
+            System.out.println("Status: "
+                + (room.occupied ? "Occupied" : "Available"));
+
+            System.out.println("--------------------------");
+        }
+    }
+
+    // Display All Allocations
+    void displayAllocations() {
+
+        System.out.println("\n----- Allocation Details -----");
+
+        if (allocations.isEmpty()) {
+            System.out.println("No allocations found.");
+            return;
+        }
+
+        for (Allocation allocation : allocations) {
+            allocation.display();
+        }
+    }
+
+    // Display Pending Requests
+    void displayRequests() {
+
+        System.out.println("\n----- Pending Requests -----");
+
+        if (requests.isEmpty()) {
+            System.out.println("No pending requests.");
+            return;
+        }
+
+        PriorityQueue<Request> temp = new PriorityQueue<>(requests);
+
+        while (!temp.isEmpty()) {
+
+            Request request = temp.poll();
+
+            System.out.println("Student ID: "
+                               + request.student.id);
+
+            System.out.println("Student Name: "
+                               + request.student.name);
+
+            System.out.println("Priority: "
+                               + request.priority);
+
+            System.out.println("--------------------------");
+        }
+    }
+}
+
+// Main Class
+public class Main {
+
+    public static void main(String[] args) {
+
+        Scanner sc = new Scanner(System.in);
+
+        HostelRoomAllocationSystem system =
+            new HostelRoomAllocationSystem();
+
+        int choice;
+
+        do {
+
+            System.out.println("\n================================");
+            System.out.println(" HOSTEL ROOM ALLOCATION SYSTEM");
+            System.out.println("================================");
+
+            System.out.println("1. Add Room");
+            System.out.println("2. Register Student");
+            System.out.println("3. Submit Room Request");
+            System.out.println("4. Allocate Room");
+            System.out.println("5. Display All Rooms");
+            System.out.println("6. Display Allocations");
+            System.out.println("7. Display Pending Requests");
+            System.out.println("8. Exit");
+
+            System.out.print("Enter your choice: ");
+            choice = sc.nextInt();
+            sc.nextLine();
+
+            switch (choice) {
+
+                case 1:
+
+                    System.out.print("Enter Room ID: ");
+                    String roomId = sc.nextLine();
+
+                    System.out.print("Enter Room Capacity: ");
+                    int capacity = sc.nextInt();
+
+                    system.addRoom(roomId, capacity);
+
+                    break;
+
+                case 2:
+
+                    System.out.print("Enter Student ID: ");
+                    String studentId = sc.nextLine();
+
+                    System.out.print("Enter Student Name: ");
+                    String name = sc.nextLine();
+
+                    System.out.print("Enter Required Capacity: ");
+                    int requiredCapacity = sc.nextInt();
+
+                    system.registerStudent(
+                        studentId, name, requiredCapacity
+                    );
+
+                    break;
+
+                case 3:
+
+                    System.out.print("Enter Student ID: ");
+                    String id = sc.nextLine();
+
+                    System.out.print("Enter Priority (1-5): ");
+                    int priority = sc.nextInt();
+
+                    if (priority < 1 || priority > 5) {
+                        System.out.println("Priority must be between 1 and 5.");
+                    } else {
+                        system.submitRequest(id, priority);
+                    }
+
+                    break;
+
+                case 4:
+
+                    system.allocateRoom();
+
+                    break;
+
+                case 5:
+
+                    system.displayRooms();
+
+                    break;
+
+                case 6:
+
+                    system.displayAllocations();
+
+                    break;
+
+                case 7:
+
+                    system.displayRequests();
+
+                    break;
+
+                case 8:
+
+                    System.out.println("Thank you for using the system!");
+
+                    break;
+
+                default:
+
+                    System.out.println("Invalid choice! Try again.");
+            }
+
+        } while (choice != 8);
+
+        sc.close();
+    }
+}
